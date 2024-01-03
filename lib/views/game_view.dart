@@ -1,7 +1,6 @@
-import 'dart:ffi';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:tic_tac_toe/common/icon_button_widget.dart';
 
 class GameView extends StatefulWidget {
   const GameView({Key? key}) : super(key: key);
@@ -15,6 +14,8 @@ class _GameViewState extends State<GameView> {
 
   List<String> displayItems = ['', '', '', '', '', '', '', '', ''];
 
+  late int pc;
+
   @override
   void initState() {
     super.initState();
@@ -24,40 +25,73 @@ class _GameViewState extends State<GameView> {
   void clear() {
     setState(() {
       displayItems = ['', '', '', '', '', '', '', '', ''];
+      turn = 0;
+      pc = Random().nextInt(2);
+    });
+    if (pc == 1) {
+      // If computer starts, make the first move
+      computerMove();
+    }
+  }
+
+  void computerMove() {
+    int computerIndex = -1;
+
+    // Simple logic: Computer randomly chooses an empty cell
+    while (computerIndex == -1 || displayItems[computerIndex] != '') {
+      computerIndex = Random().nextInt(9);
+    }
+
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        displayItems[computerIndex] = "◯"; // Computer's move
+        turn++;
+      });
+
+      checkWinner();
     });
   }
 
   void update(int index) {
     setState(() {
-      if (turn % 2 == 0 && displayItems[index] == '') {
-        displayItems[index] = "✕";
-        checkWinner();
-        turn++;
-      } else if (turn % 2 != 0 && displayItems[index] == '') {
-        displayItems[index] = "◯";
-        checkWinner();
-        turn++;
+      if (displayItems[index] == '') {
+        setState(() {
+          displayItems[index] = "✕"; // Player's move
+          turn++;
+        });
+
+        if (checkWinner()) {
+          return;
+        }
+
+        if (turn < 9) {
+          computerMove();
+        } else {
+          _showDrawDialog();
+        }
       }
-      checkWinner();
     });
   }
 
-  void checkWinner() {
+  bool checkWinner() {
     // Checking rows
     if (displayItems[0] == displayItems[1] &&
         displayItems[0] == displayItems[2] &&
         displayItems[0] != '') {
       _showWinDialog(displayItems[0]);
+      return true;
     }
     if (displayItems[3] == displayItems[4] &&
         displayItems[3] == displayItems[5] &&
         displayItems[3] != '') {
       _showWinDialog(displayItems[3]);
+      return true;
     }
     if (displayItems[6] == displayItems[7] &&
         displayItems[6] == displayItems[8] &&
         displayItems[6] != '') {
       _showWinDialog(displayItems[6]);
+      return true;
     }
 
     // Checking Column
@@ -65,16 +99,19 @@ class _GameViewState extends State<GameView> {
         displayItems[0] == displayItems[6] &&
         displayItems[0] != '') {
       _showWinDialog(displayItems[0]);
+      return true;
     }
     if (displayItems[1] == displayItems[4] &&
         displayItems[1] == displayItems[7] &&
         displayItems[1] != '') {
       _showWinDialog(displayItems[1]);
+      return true;
     }
     if (displayItems[2] == displayItems[5] &&
         displayItems[2] == displayItems[8] &&
         displayItems[2] != '') {
       _showWinDialog(displayItems[2]);
+      return true;
     }
 
     // Checking Diagonal
@@ -82,14 +119,19 @@ class _GameViewState extends State<GameView> {
         displayItems[0] == displayItems[8] &&
         displayItems[0] != '') {
       _showWinDialog(displayItems[0]);
+      return true;
     }
     if (displayItems[2] == displayItems[4] &&
         displayItems[2] == displayItems[6] &&
         displayItems[2] != '') {
       _showWinDialog(displayItems[2]);
+      return true;
     } else if (turn == 9) {
       _showDrawDialog();
+      return true;
     }
+
+    return false;
   }
 
   void _showDrawDialog() {
